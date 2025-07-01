@@ -48,6 +48,27 @@ class Container implements ContainerContract
     protected array $resolved = [];
 
     /**
+     * Reflection cache to avoid repeated ReflectionClass instantiation.
+     *
+     * @var array<string, ReflectionClass>
+     */
+    protected array $reflectionCache = [];
+
+    /**
+     * Flattened alias cache to avoid recursive lookups.
+     *
+     * @var array<string, string>
+     */
+    protected array $flattenedAliases = [];
+
+    /**
+     * Dependency cache for constructor parameters.
+     *
+     * @var array<string, array>
+     */
+    protected array $dependencyCache = [];
+
+    /**
      * Set current container instance.
      *
      * @param Container $instance
@@ -81,6 +102,10 @@ class Container implements ContainerContract
     {
         if (is_null($concrete)) $concrete = $abstract;
         $this->bindings[$abstract] = compact('concrete', 'shared');
+        
+        // Clear caches that might be affected
+        unset($this->dependencyCache[$abstract]);
+        unset($this->reflectionCache[$abstract]);
     }
 
     /**
@@ -105,6 +130,8 @@ class Container implements ContainerContract
     public function alias(string $abstract, string $alias): void
     {
         $this->aliases[$alias] = $abstract;
+        // Clear flattened alias cache when new aliases are added
+        $this->flattenedAliases = [];
     }
 
     /**
@@ -120,28 +147,61 @@ class Container implements ContainerContract
      */
     public function make(string $abstract, array $params = []): mixed
     {
+        $original = $abstract;
         $abstract = $this->getAlias($abstract);
-        if (isset($this->instances[$abstract])) return $this->instances[$abstract];
+        
+        // Fast path for singletons
+        if (isset($this->instances[$abstract])) {
+            return $this->instances[$abstract];
+        }
 
         $concrete = $this->getConcrete($abstract);
-        if ($this->isBuildable($concrete, $abstract)) $obj = $this->build($concrete, $params);
-        else $obj = $this->make($concrete);
+        
+        if ($this->isBuildable($concrete, $abstract)) {
+            $obj = $this->build($concrete, $params);
+        } else {
+            $obj = $this->make($concrete);
+        }
 
-        if ($this->isShared($abstract)) $this->instances[$abstract] = $obj;
+        if ($this->isShared($abstract)) {
+            $this->instances[$abstract] = $obj;
+        }
+        
         $this->resolved[$abstract] = true;
 
         return $obj;
     }
 
     /**
-     * Get abstract alias.
+     * Get abstract alias with flattened cache for performance.
      *
      * @param string $abstract
      * @return string
      */
     protected function getAlias(string $abstract): string
     {
-        return isset($this->aliases[$abstract]) ? $this->getAlias($this->aliases[$abstract]) : $abstract;
+        // Use cached flattened alias if available
+        if (isset($this->flattenedAliases[$abstract])) {
+            return $this->flattenedAliases[$abstract];
+        }
+
+        $original = $abstract;
+        $resolved = $abstract;
+        $seen = [];
+
+        // Flatten alias chain and cache result
+        while (isset($this->aliases[$resolved])) {
+            if (isset($seen[$resolved])) {
+                // Circular reference detected
+                break;
+            }
+            $seen[$resolved] = true;
+            $resolved = $this->aliases[$resolved];
+        }
+
+        // Cache the flattened result
+        $this->flattenedAliases[$original] = $resolved;
+        return $resolved;
     }
 
     /**
@@ -184,7 +244,7 @@ class Container implements ContainerContract
     }
 
     /**
-     * Build concrete.
+     * Build concrete with cached reflection.
      *
      * @param callable|string $concrete
      * @param array $params
@@ -200,22 +260,70 @@ class Container implements ContainerContract
             return $concrete($this, ...array_values($params));
         }
 
-        try {
-            $reflector = new ReflectionClass($concrete);
-        } catch (ReflectionException) {
-            throw new NotFoundException("Unable to resolve class [$concrete]");
-        }
+        $reflector = $this->getReflection($concrete);
 
         if (!$reflector->isInstantiable()) {
             throw new BindingResolutionException("Target [$concrete] is not instantiable.");
         }
 
         $constructor = $reflector->getConstructor();
-        if (is_null($constructor)) return $reflector->newInstance();
+        if (is_null($constructor)) {
+            return $reflector->newInstance();
+        }
+
+        $dependencies = $this->getCachedDependencies($concrete, $constructor, $params);
+        return $reflector->newInstanceArgs($dependencies);
+    }
+
+    /**
+     * Get cached reflection class to avoid repeated instantiation.
+     *
+     * @param string $concrete
+     * @return ReflectionClass
+     * @throws NotFoundException
+     */
+    protected function getReflection(string $concrete): ReflectionClass
+    {
+        if (!isset($this->reflectionCache[$concrete])) {
+            try {
+                $this->reflectionCache[$concrete] = new ReflectionClass($concrete);
+            } catch (ReflectionException) {
+                throw new NotFoundException("Unable to resolve class [$concrete]");
+            }
+        }
+
+        return $this->reflectionCache[$concrete];
+    }
+
+    /**
+     * Get dependencies with caching for better performance.
+     *
+     * @param string $concrete
+     * @param ReflectionMethod $constructor
+     * @param array $params
+     * @return array
+     * @throws NotFoundException
+     * @throws ReflectionException
+     * @throws BindingResolutionException
+     */
+    protected function getCachedDependencies(string $concrete, ReflectionMethod $constructor, array $params = []): array
+    {
+        $cacheKey = $concrete;
+        
+        // If we have cached dependencies and no custom params, use cache
+        if (empty($params) && isset($this->dependencyCache[$cacheKey])) {
+            return $this->dependencyCache[$cacheKey];
+        }
 
         $dependencies = $constructor->getParameters();
         $args = $this->getDependencies($dependencies, $params);
-        return $reflector->newInstanceArgs($args);
+
+        // Cache only if no custom params were provided
+        if (empty($params)) {
+            $this->dependencyCache[$cacheKey] = $args;
+        }
+
+        return $args;
     }
 
     /**
@@ -322,5 +430,34 @@ class Container implements ContainerContract
     public function has(string $id): bool
     {
         return $this->bound($id);
+    }
+
+    /**
+     * Clear all caches for memory management.
+     *
+     * @return void
+     */
+    public function clearCaches(): void
+    {
+        $this->reflectionCache = [];
+        $this->flattenedAliases = [];
+        $this->dependencyCache = [];
+    }
+
+    /**
+     * Get cache statistics for debugging.
+     *
+     * @return array
+     */
+    public function getCacheStats(): array
+    {
+        return [
+            'reflection_cache_size' => count($this->reflectionCache),
+            'flattened_aliases_size' => count($this->flattenedAliases),
+            'dependency_cache_size' => count($this->dependencyCache),
+            'bindings_count' => count($this->bindings),
+            'instances_count' => count($this->instances),
+            'aliases_count' => count($this->aliases),
+        ];
     }
 }
