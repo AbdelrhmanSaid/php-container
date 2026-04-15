@@ -1,8 +1,8 @@
 <?php /** @noinspection PhpUnhandledExceptionInspection */
 
-use Redot\Container\Container;
-use Redot\Container\Errors\NotFoundException;
-use Redot\Container\Errors\BindingResolutionException;
+use AbdelrhmanSaid\Container\Container;
+use AbdelrhmanSaid\Container\Errors\NotFoundException;
+use AbdelrhmanSaid\Container\Errors\BindingResolutionException;
 
 test('Container::getInstance() returns the current container instance', function () {
     $container = Container::getInstance();

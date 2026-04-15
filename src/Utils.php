@@ -1,11 +1,11 @@
 <?php
 
-namespace Redot\Container;
+namespace AbdelrhmanSaid\Container;
 
 use ReflectionNamedType;
 use ReflectionParameter;
 use JetBrains\PhpStorm\Pure;
-use Redot\Container\Contracts\Utils as UtilsContract;
+use AbdelrhmanSaid\Container\Contracts\Utils as UtilsContract;
 
 class Utils implements UtilsContract
 {

@@ -1,14 +1,14 @@
 <?php
 
-namespace Redot\Container;
+namespace AbdelrhmanSaid\Container;
 
 use Closure;
 use ReflectionClass;
 use ReflectionMethod;
 use ReflectionException;
-use Redot\Container\Errors\NotFoundException;
-use Redot\Container\Errors\BindingResolutionException;
-use Redot\Container\Contracts\Container as ContainerContract;
+use AbdelrhmanSaid\Container\Errors\NotFoundException;
+use AbdelrhmanSaid\Container\Errors\BindingResolutionException;
+use AbdelrhmanSaid\Container\Contracts\Container as ContainerContract;
 
 class Container implements ContainerContract
 {

@@ -1,13 +1,13 @@
-# Redot PHP Container
+# PHP Container
 
-[![tests](https://github.com/redot-src/php-container/actions/workflows/php.yml/badge.svg)](https://github.com/redot-src/php-container/actions/workflows/php.yml)
+[![tests](https://github.com/AbdelrhmanSaid/php-container/actions/workflows/php.yml/badge.svg)](https://github.com/AbdelrhmanSaid/php-container/actions/workflows/php.yml)
 
 *Minimal, Lightweight, and Fast PHP Dependency Injection Container*
 
 ## Installation
 
 ```sh
-composer require redot/container
+composer require abdelrhmansaid/container
 ```
 
 ## Testing
@@ -23,7 +23,7 @@ The methodologies of the container are based on the [Dependency Injection](https
 To use the container, you must first create a new instance of the container.
 
 ```php
-use Redot\Container\Container;
+use AbdelrhmanSaid\Container\Container;
 
 $container = new Container();
 ```

@@ -1,6 +1,6 @@
 <?php
 
-namespace Redot\Container\Errors;
+namespace AbdelrhmanSaid\Container\Errors;
 
 use Exception;
 use Psr\Container\ContainerExceptionInterface;

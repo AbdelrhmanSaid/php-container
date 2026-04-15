@@ -1,6 +1,6 @@
 <?php
 
-namespace Redot\Container\Contracts;
+namespace AbdelrhmanSaid\Container\Contracts;
 
 use ReflectionParameter;
 

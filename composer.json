@@ -1,22 +1,22 @@
 {
-    "name": "redot/container",
+    "name": "abdelrhmansaid/container",
     "description": "Minimal, Lightweight, and Fast PHP Dependency Injection Container.",
     "license": "MIT",
     "support": {
-        "issues": "https://github.com/redot-src/php-container/issues",
-        "source": "https://github.com/redot-src/php-container"
+        "issues": "https://github.com/abdelrhmansaid/php-container/issues",
+        "source": "https://github.com/abdelrhmansaid/php-container"
     },
     "authors": [
         {
             "name": "Abdelrhman Said",
-            "email": "redot-srczaki@hotmail.com",
+            "email": "abdelrhmansaidzaki@hotmail.com",
             "role": "Developer"
         }
     ],
     "keywords": ["php", "container", "dependency", "injection"],
     "autoload": {
         "psr-4": {
-            "Redot\\Container\\": "src/"
+            "AbdelrhmanSaid\\Container\\": "src/"
         }
     },
     "require": {

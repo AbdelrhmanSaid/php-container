@@ -1,29 +1,29 @@
 <?php
 
-namespace Redot\Container\Contracts;
+namespace AbdelrhmanSaid\Container\Contracts;
 
 use ReflectionException;
 use Psr\Container\ContainerInterface;
-use Redot\Container\Errors\NotFoundException;
-use Redot\Container\Errors\BindingResolutionException;
+use AbdelrhmanSaid\Container\Errors\NotFoundException;
+use AbdelrhmanSaid\Container\Errors\BindingResolutionException;
 
 interface Container extends ContainerInterface
 {
     /**
      * Set current container instance.
      *
-     * @param \Redot\Container\Container $instance
+     * @param \AbdelrhmanSaid\Container\Container $instance
      * @return void
      */
-    public static function setInstance(\Redot\Container\Container $instance): void;
+    public static function setInstance(\AbdelrhmanSaid\Container\Container $instance): void;
     
 
     /**
      * Get current container instance.
      *
-     * @return \Redot\Container\Container
+     * @return \AbdelrhmanSaid\Container\Container
      */
-    public static function getInstance(): \Redot\Container\Container;
+    public static function getInstance(): \AbdelrhmanSaid\Container\Container;
 
     /**
      * Bind an abstract to a concrete.
